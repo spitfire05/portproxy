@@ -17,8 +17,8 @@ struct Config {
 
 #[derive(Deserialize)]
 struct Proxy {
-    source: String,
-    target: String,
+    listen: String,
+    connect: String,
 }
 
 async fn str_to_sock_addr(input: &str) -> Result<SocketAddr> {
@@ -50,8 +50,8 @@ async fn main() -> Result<()> {
         None => bail!("No proxies defined in config"),
         Some(proxy_list) => {
             for p in &proxy_list {
-                let listen = str_to_sock_addr(&p.source).await?;
-                let connect = str_to_sock_addr(&p.target).await?;
+                let listen = str_to_sock_addr(&p.listen).await?;
+                let connect = str_to_sock_addr(&p.connect).await?;
 
                 let proxy = TcpProxy::new(listen, connect);
                 proxies.push(proxy);

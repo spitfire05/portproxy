@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use color_eyre::eyre::Result;
 use derive_getters::Getters;
 use log::{error, info, trace};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
 #[derive(Debug, Copy, Clone, Getters)]
@@ -31,67 +31,81 @@ impl TcpProxy {
         let listener = TcpListener::bind(self.listen_address).await?;
 
         loop {
-            let (mut source, _) = listener.accept().await?;
-            let mut target = TcpStream::connect(self.connect_address).await?;
+            let (source, _) = listener.accept().await?;
+            let target = TcpStream::connect(self.connect_address).await?;
+            let (mut source_read, mut source_write) = source.into_split();
+            let (mut target_read, mut target_write) = target.into_split();
 
-            tokio::spawn(async move {
-                const BUF_SIZE: usize = 1024;
-                let mut buf = [0; BUF_SIZE];
-
+            let forward_task = tokio::spawn(async move {
                 loop {
                     // read from source
-                    let n_source = match source.read(&mut buf).await {
-                        // socket closed
-                        Ok(n) if n == 0 => return,
-                        Ok(n) => n,
+                    let mut br = BufReader::new(&mut source_read);
+                    let rx = match br.fill_buf().await {
+                        Ok(rx) => rx.to_owned(),
                         Err(e) => {
                             error!("failed to read from socket; err = {:?}", e);
-                            return;
+                            break;
                         }
                     };
+
+                    let n_source = rx.len();
 
                     trace!("{} bytes read from {}", n_source, listen);
 
-                    // Write to target
-                    if let Err(e) = target.write_all(&buf[0..n_source]).await {
-                        error!("failed to write to socket; err = {:?}", e);
-                        return;
-                    }
-
-                    trace!("{} bytes written to {}", n_source, connect);
-
-                    if n_source != BUF_SIZE {
+                    if n_source == 0 {
+                        trace!("closing {} handler because of 0 bytes read", listen);
                         break;
                     }
-                }
 
+                    // Write to target
+                    if let Err(e) = target_write.write_all(&rx).await {
+                        error!("failed to write to socket; err = {:?}", e);
+                        break;
+                    }
+
+                    br.consume(n_source);
+
+                    trace!("{} bytes written to {}", n_source, connect);
+                }
+            });
+
+            let backward_task = tokio::spawn(async move {
                 loop {
-                    // read target's reply
-                    let n_target = match target.read(&mut buf).await {
-                        // socket closed
-                        Ok(n) if n == 0 => return,
-                        Ok(n) => n,
+                    // read from target
+                    let mut br = BufReader::new(&mut target_read);
+                    let rx = match br.fill_buf().await {
+                        Ok(rx) => rx.to_owned(),
                         Err(e) => {
                             error!("failed to read from socket; err = {:?}", e);
-                            return;
+                            break;
                         }
                     };
 
+                    let n_target = rx.len();
+
                     trace!("{} bytes read from {}", n_target, connect);
 
+                    if n_target == 0 {
+                        trace!("closing {} handler because of 0 bytes read", listen);
+                        break;
+                    }
+
                     // Write to source
-                    if let Err(e) = source.write_all(&buf[0..n_target]).await {
+                    if let Err(e) = source_write.write_all(&rx).await {
                         error!("failed to write to socket; err = {:?}", e);
-                        return;
+                        break;
                     }
 
                     trace!("{} bytes written to {}", n_target, listen);
 
-                    if n_target != BUF_SIZE {
-                        break;
-                    }
+                    br.consume(n_target);
                 }
             });
+
+            tokio::select! {
+                _ = forward_task => trace!("{} closed the connection", listen),
+                _ = backward_task => trace!("{} closed the connection", connect),
+            }
         }
     }
 }
