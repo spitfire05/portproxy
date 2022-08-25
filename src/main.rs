@@ -9,6 +9,8 @@ use futures::future::try_join_all;
 use proxy::TcpProxy;
 use tokio::net::lookup_host;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 async fn str_to_sock_addr(input: &str) -> Result<SocketAddr> {
     let results = lookup_host(input)
         .await
@@ -26,6 +28,8 @@ async fn str_to_sock_addr(input: &str) -> Result<SocketAddr> {
 async fn main() -> Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     color_eyre::install()?;
+
+    log::info!("portproxy v{} starting...", VERSION);
 
     let cfg = config::load()?;
 
