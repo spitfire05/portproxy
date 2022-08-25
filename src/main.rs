@@ -5,7 +5,6 @@ use std::net::SocketAddr;
 
 use color_eyre::eyre::{bail, eyre, Result, WrapErr};
 use env_logger::Env;
-use futures::future::join_all;
 use futures::future::try_join_all;
 use proxy::TcpProxy;
 use tokio::net::lookup_host;
