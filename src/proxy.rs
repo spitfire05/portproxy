@@ -25,7 +25,8 @@ impl TcpProxy {
         let connect = Arc::new(self.connect_address);
         log::info!(
             "Starting TcpProxy {} -> {}",
-            self.listen_address, self.connect_address
+            self.listen_address,
+            self.connect_address
         );
 
         let listener = TcpListener::bind(self.listen_address).await?;
@@ -34,16 +35,26 @@ impl TcpProxy {
             let (source, _) = match listener.accept().await {
                 Ok(x) => x,
                 Err(e) => {
-                    log::error!("{} -> {}: Could not accept connection: {}", listen, connect, e);
+                    log::error!(
+                        "{} -> {}: Could not accept connection: {}",
+                        listen,
+                        connect,
+                        e
+                    );
                     continue;
-                },
+                }
             };
             let target = match TcpStream::connect(self.connect_address).await {
                 Ok(target) => target,
                 Err(e) => {
-                    log::error!("{} -> {}: Could not connect to upstream: {}", listen, connect, e);
+                    log::error!(
+                        "{} -> {}: Could not connect to upstream: {}",
+                        listen,
+                        connect,
+                        e
+                    );
                     continue;
-                },
+                }
             };
             let (source_read, source_write) = source.into_split();
             let (target_read, target_write) = target.into_split();
