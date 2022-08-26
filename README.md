@@ -4,7 +4,7 @@ Simple port forwarding tool, built with tokio-rs 🦀
 ## What does it do?
 Pretty much the very same thing as Windows' `netsh interface portproxy` or Linux's `iptables` forward - it maps the incoming connections from `listen` local adress & port to remote `connect` address and port.
 
-Only TCP port forwaridng is supported at this time.
+Only TCP port forwarding is supported at this time.
 
 This tool does not currently offer anything more over the native OS  tools, maybe besides the unification and ease of defining the mappings.
 
