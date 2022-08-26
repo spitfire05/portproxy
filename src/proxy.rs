@@ -32,7 +32,7 @@ impl TcpProxy {
         let listener = TcpListener::bind(self.listen_address).await?;
 
         loop {
-            let (source, _) = match listener.accept().await {
+            let (source, downstream_addr) = match listener.accept().await {
                 Ok(x) => x,
                 Err(e) => {
                     log::error!(
@@ -44,6 +44,10 @@ impl TcpProxy {
                     continue;
                 }
             };
+
+            let downstream_addr = Arc::new(downstream_addr);
+            log::debug!("downstream {} connected to {}", downstream_addr, listen);
+
             let target = match TcpStream::connect(self.connect_address).await {
                 Ok(target) => target,
                 Err(e) => {
@@ -56,26 +60,38 @@ impl TcpProxy {
                     continue;
                 }
             };
+
+            log::debug!("Proxy {} connected to upstream {}", listen, connect);
+
             let (source_read, source_write) = source.into_split();
             let (target_read, target_write) = target.into_split();
 
             let forward_task = tokio::spawn(handle_task(
                 source_read,
                 target_write,
+                downstream_addr.clone(),
                 listen.clone(),
                 connect.clone(),
             ));
             let backward_task = tokio::spawn(handle_task(
                 target_read,
                 source_write,
+                downstream_addr.clone(),
                 listen.clone(),
                 connect.clone(),
             ));
 
             tokio::select! {
-                _ = forward_task => log::trace!("{} closed the connection", listen),
-                _ = backward_task => log::trace!("{} closed the connection", connect),
+                _ = forward_task => log::debug!("Downstream {} closed the connection to {}", downstream_addr, listen),
+                _ = backward_task => log::debug!("Upstream {} closed the connection", connect),
             }
+
+            log::debug!(
+                "{} -> {} -> {} connections closed",
+                downstream_addr,
+                listen,
+                connect
+            );
         }
     }
 }
@@ -83,6 +99,7 @@ impl TcpProxy {
 async fn handle_task<T: AsyncRead + Unpin, U: AsyncWrite + Unpin>(
     source: T,
     mut target: U,
+    downstream_addr: Arc<SocketAddr>,
     source_addr: Arc<SocketAddr>,
     target_addr: Arc<SocketAddr>,
 ) {
@@ -99,7 +116,12 @@ async fn handle_task<T: AsyncRead + Unpin, U: AsyncWrite + Unpin>(
 
         let n_target = rx.len();
 
-        log::trace!("{} bytes read from {}", n_target, source_addr);
+        log::trace!(
+            "{} bytes read from {} at {}",
+            n_target,
+            downstream_addr,
+            source_addr
+        );
 
         if n_target == 0 {
             log::trace!("closing {} handler because of 0 bytes read", source_addr);
