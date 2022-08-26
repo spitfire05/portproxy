@@ -46,7 +46,7 @@ impl TcpProxy {
             };
 
             let downstream_addr = Arc::new(downstream_addr);
-            log::debug!("downstream {} connected to {}", downstream_addr, listen);
+            log::debug!("Downstream {} connected to {}", downstream_addr, listen);
 
             let target = match TcpStream::connect(self.connect_address).await {
                 Ok(target) => target,
@@ -109,7 +109,7 @@ async fn handle_task<T: AsyncRead + Unpin, U: AsyncWrite + Unpin>(
         let rx = match br.fill_buf().await {
             Ok(rx) => rx.to_owned(),
             Err(e) => {
-                log::error!("failed to read from socket; err = {:?}", e);
+                log::error!("Failed to read from socket: {}", e);
                 break;
             }
         };
@@ -124,13 +124,13 @@ async fn handle_task<T: AsyncRead + Unpin, U: AsyncWrite + Unpin>(
         );
 
         if n_target == 0 {
-            log::trace!("closing {} handler because of 0 bytes read", source_addr);
+            log::trace!("Closing {} handler because of 0 bytes read", source_addr);
             break;
         }
 
         // Write to target
         if let Err(e) = target.write_all(&rx).await {
-            log::error!("failed to write to socket; err = {:?}", e);
+            log::error!("Failed to write to socket: {}", e);
             break;
         }
 
