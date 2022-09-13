@@ -780,7 +780,7 @@ checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
 
 [[package]]
 name = "portproxy"
-version = "0.1.0-alpha.0"
+version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "color-eyre",
