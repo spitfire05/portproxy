@@ -23,6 +23,9 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' 
     - name: Build
       run: cargo build --verbose
     - name: Run tests
