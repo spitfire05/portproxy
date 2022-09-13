@@ -10,8 +10,8 @@ fn functional() -> Result<()> {
 
     let config = "\
     [[proxy]]
-    listen = \"localhost:8001\"
-    connect = \"localhost:8000\"
+    listen = \"127.0.0.1:8001\"
+    connect = \"127.0.0.1:8000\"
     ";
 
     let config_path = tmp.path().join("config.toml");
@@ -26,7 +26,7 @@ fn functional() -> Result<()> {
 
     let mut server = Command::new("python3")
         .current_dir(&tmp)
-        .args(["-m", "http.server"])
+        .args(["-m", "http.server", "--bind", "127.0.0.1"])
         .spawn()?;
     defer!(server.kill().expect("could not kill server"));
 
@@ -45,7 +45,7 @@ fn functional() -> Result<()> {
     thread::sleep(Duration::from_secs(1));
 
     // Read the data via HTTP
-    let read = reqwest::blocking::get("http://localhost:8001/data")?.text()?;
+    let read = reqwest::blocking::get("http://127.0.0.1:8001/data")?.text()?;
 
     if read != data {
         return Err(eyre!("Read data does not match the generated one"));
