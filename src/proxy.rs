@@ -20,7 +20,7 @@ impl TcpProxy {
         }
     }
 
-    pub async fn listen(&self) -> Result<()> {
+    pub async fn run(&self) -> Result<()> {
         let listen = Arc::new(self.listen_address);
         let connect = Arc::new(self.connect_address);
         log::info!(

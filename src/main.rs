@@ -33,11 +33,12 @@ async fn main() -> Result<()> {
 
     let cfg = config::load()?;
 
-    let mut proxies = vec![];
+    let mut proxies;
 
     match cfg.proxy() {
         None => bail!("No proxies defined in config"),
         Some(proxy_list) => {
+            proxies = Vec::with_capacity(proxy_list.len());
             for p in proxy_list {
                 let listen = str_to_sock_addr(p.listen()).await?;
                 let connect = str_to_sock_addr(p.connect()).await?;
@@ -45,11 +46,10 @@ async fn main() -> Result<()> {
                 let proxy = TcpProxy::new(listen, connect);
                 proxies.push(proxy);
             }
-
-            let futures = proxies.iter().map(|p| p.listen());
-            try_join_all(futures).await?;
         }
     }
+
+    try_join_all(proxies.iter().map(|p| p.run())).await?;
 
     Ok(())
 }
