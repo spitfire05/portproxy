@@ -9,6 +9,15 @@ Only TCP port forwarding is supported at this time.
 This tool does not currently offer anything more over the native OS  tools, maybe besides the unification and ease of defining the mappings.
 
 ## Install
+
+### Cargo
+
+```sh
+cargo install portproxy
+```
+
+### From source
+
 Clone the repo and compile it:
 ```sh
 git clone https://github.com/spitfire05/portproxy.git
@@ -16,7 +25,9 @@ cd portproxy
 cargo install
 ```
 
-Crates.io package will come in the future (surely), as well as some pre-compiled binaries (less surely).
+### Pre-compiled binaries
+
+Windows binaries are avialable in the releases section of this repo.
 
 ## Configuration
 Config file will be read from `$HOME/.config/portproxy.toml`, or from path under `PORTPROXY_CONFIG` env variable, if it is set.
