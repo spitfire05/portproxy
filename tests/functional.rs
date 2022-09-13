@@ -1,8 +1,28 @@
-use std::{fs, process::Command, thread, time::Duration};
-
+use assert_cmd::prelude::*;
 use color_eyre::eyre::{eyre, Result};
 use rand::Rng;
 use scopeguard::defer;
+use std::{fs, process::Command, thread, time::Duration};
+
+#[test]
+fn empty_config() -> Result<()> {
+    let tmp = tempfile::tempdir()?;
+    let cfg_path = tmp.path().join("config.toml");
+    fs::write(&cfg_path, "")?;
+    escargot::CargoBuild::new()
+        .bin("portproxy")
+        .current_release()
+        .current_target()
+        .run()?
+        .command()
+        .env("RUST_LOG", "debug")
+        .env("PORTPROXY_CONFIG", &cfg_path)
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("No proxies defined in config"));
+
+    Ok(())
+}
 
 #[test]
 fn functional() -> Result<()> {

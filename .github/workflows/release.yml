@@ -1,0 +1,75 @@
+# Based on https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    # Note this. We are going to use that in further jobs.
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: olegtarasov/get-tag@v2.1
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.GIT_TAG_NAME }}
+          release_name: ${{ env.GIT_TAG_NAME }}
+          draft: false
+          prerelease: false
+
+  build:
+    name: Build
+    needs: create_release
+    strategy:
+      matrix:
+        build: [win32, win64]
+        include:
+        - build: win32
+          os: windows-latest
+          target: i686-pc-windows-msvc
+        - build: win64
+          os: windows-latest
+          target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
+    
+    env:
+      RUSTFLAGS: "--deny warnings"
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: olegtarasov/get-tag@v2.1
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+    - name: Build
+      run: cargo build --verbose --release --target ${{ matrix.target }}
+    - name: Pack
+      shell: bash
+      run: |
+        staging=portproxy-$GIT_TAG_NAME-${{ matrix.target }}
+        mkdir -p $staging
+        cp "target/${{ matrix.target }}/release/portproxy.exe" "$staging/"
+        7z a "$staging.zip" "$staging"
+        echo "ASSET=$staging.zip" >> $GITHUB_ENV
+    - name: Upload release assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_name: ${{ env.ASSET }}
+        asset_path: ${{ env.ASSET }}
+        asset_content_type: application/octet-stream

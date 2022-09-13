@@ -1,9 +1,13 @@
 [package]
 name = "portproxy"
-version = "0.1.0-alpha.0"
+version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Michal Borejszo <michael.borejszo@gmail.com>"]
+license = "MIT"
+description = "Simple port forwarding tool"
+repository = "https://github.com/spitfire05/portproxy"
+keywords = ["networking", "proxy", "forwarding"]
+categories = ["ommand-line-utilities", "network-programming"]
 
 [dependencies]
 color-eyre = "0.6"
@@ -22,3 +26,5 @@ tempfile = "3.3.0"
 reqwest = { version = "0.11", features = ["blocking"] }
 escargot = "0.5"
 scopeguard = "1.1.0"
+assert_cmd = "2.0.4"
+predicates = "1"
