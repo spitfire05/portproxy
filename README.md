@@ -19,7 +19,7 @@ cargo install
 Crates.io package will come in the future (surely), as well as some pre-compiled binaries (less surely).
 
 ## Configuration
-Config file will be read from `$HOME/.config/portproxy.toml`, or from `PORTPROXY_CONFIG` env variable, if it is set.
+Config file will be read from `$HOME/.config/portproxy.toml`, or from path under `PORTPROXY_CONFIG` env variable, if it is set.
 
 Config should contain one or more `[[proxy]]` elements, that define the port mappings:
 
