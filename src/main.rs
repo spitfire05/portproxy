@@ -42,5 +42,7 @@ async fn main() -> Result<()> {
 
     join_all(proxies.iter().map(|p| p.run())).await;
 
+    log::info!("Nothing left to do, exiting..");
+
     Ok(())
 }
