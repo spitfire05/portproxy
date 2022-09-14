@@ -1,6 +1,8 @@
 # portproxy
 Simple port forwarding tool, built with tokio-rs 🦀
 
+[![Crates.io](https://img.shields.io/crates/v/portproxy)](https://crates.io/crates/portproxy)
+
 ## What does it do?
 Pretty much the very same thing as Windows' `netsh interface portproxy` or Linux's `iptables` forward - it maps the incoming connections from `listen` local adress & port to remote `connect` address and port.
 
@@ -41,4 +43,4 @@ connect = "some-server.lan:8485" # remote (or local) address to connect to
 ```
 
 ## Run
-Running is as simple as it can be - just call the `portproxy` binary. There are no command line arguments, all coniguration is done in the config file.
+Running is as simple as it can be - just call the `portproxy` binary. There are no command line arguments, all configuration is done in the config file.
