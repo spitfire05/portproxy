@@ -39,6 +39,9 @@ impl TcpProxy {
             }
         };
 
+        let listen = Arc::new(self.listen_address().clone());
+        let connect = Arc::new(self.connect_address().clone());
+
         loop {
             let (source, downstream_addr) = match listener.accept().await {
                 Ok(x) => x,
@@ -59,57 +62,55 @@ impl TcpProxy {
                 self.listen_address()
             );
 
-            let target = match TcpStream::connect(self.connect_address()).await {
-                Ok(target) => target,
-                Err(e) => {
-                    log::error!(
-                        "{} -> {}: Could not connect to upstream: {}",
-                        self.listen_address(),
-                        self.connect_address(),
-                        e
-                    );
-                    continue;
+            let listen = listen.clone();
+            let connect = connect.clone();
+
+            tokio::spawn(async move {
+                let target = match TcpStream::connect(connect.as_str()).await {
+                    Ok(target) => target,
+                    Err(e) => {
+                        log::error!(
+                            "{} -> {}: Could not connect to upstream: {}",
+                            listen,
+                            connect,
+                            e
+                        );
+                        return;
+                    }
+                };
+
+                log::debug!("Proxy {} connected to upstream {}", listen, connect);
+
+                let (source_read, source_write) = source.into_split();
+                let (target_read, target_write) = target.into_split();
+
+                let forward_task = tokio::spawn(handle_task(
+                    source_read,
+                    target_write,
+                    downstream_addr,
+                    listen.clone(),
+                    connect.clone(),
+                ));
+                let backward_task = tokio::spawn(handle_task(
+                    target_read,
+                    source_write,
+                    downstream_addr,
+                    listen.clone(),
+                    connect.clone(),
+                ));
+
+                tokio::select! {
+                    _ = forward_task => log::debug!("Downstream {} closed the connection to {}", downstream_addr, listen),
+                    _ = backward_task => log::debug!("Upstream {} closed the connection", connect),
                 }
-            };
 
-            log::debug!(
-                "Proxy {} connected to upstream {}",
-                self.listen_address(),
-                self.connect_address()
-            );
-
-            let (source_read, source_write) = source.into_split();
-            let (target_read, target_write) = target.into_split();
-
-            let listen = Arc::new(self.listen_address().clone());
-            let connect = Arc::new(self.connect_address().clone());
-
-            let forward_task = tokio::spawn(handle_task(
-                source_read,
-                target_write,
-                downstream_addr,
-                listen.clone(),
-                connect.clone(),
-            ));
-            let backward_task = tokio::spawn(handle_task(
-                target_read,
-                source_write,
-                downstream_addr,
-                listen.clone(),
-                connect.clone(),
-            ));
-
-            tokio::select! {
-                _ = forward_task => log::debug!("Downstream {} closed the connection to {}", downstream_addr, self.listen_address()),
-                _ = backward_task => log::debug!("Upstream {} closed the connection", self.connect_address()),
-            }
-
-            log::debug!(
-                "{} -> {} -> {} connections closed",
-                downstream_addr,
-                self.listen_address(),
-                self.connect_address()
-            );
+                log::debug!(
+                    "{} -> {} -> {} connections closed",
+                    downstream_addr,
+                    listen,
+                    connect,
+                );
+            });
         }
     }
 }
