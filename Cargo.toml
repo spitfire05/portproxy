@@ -7,7 +7,7 @@ license = "MIT"
 description = "Simple port forwarding tool"
 repository = "https://github.com/spitfire05/portproxy"
 keywords = ["networking", "proxy", "forwarding"]
-categories = ["ommand-line-utilities", "network-programming"]
+categories = ["command-line-utilities", "network-programming"]
 
 [dependencies]
 color-eyre = "0.6"
