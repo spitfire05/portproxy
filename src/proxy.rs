@@ -1,35 +1,43 @@
-use std::net::SocketAddr;
+use std::fmt::Display;
 use std::sync::Arc;
 
-use color_eyre::eyre::Result;
 use derive_getters::Getters;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
-#[derive(Debug, Copy, Clone, Getters)]
+#[derive(Debug, Clone, Getters)]
 pub struct TcpProxy {
-    listen_address: SocketAddr,
-    connect_address: SocketAddr,
+    listen_address: String,
+    connect_address: String,
 }
 
 impl TcpProxy {
-    pub fn new(listen_address: SocketAddr, connect_address: SocketAddr) -> Self {
+    pub fn new(listen_address: String, connect_address: String) -> Self {
         Self {
             listen_address,
             connect_address,
         }
     }
 
-    pub async fn run(&self) -> Result<()> {
-        let listen = Arc::new(self.listen_address);
-        let connect = Arc::new(self.connect_address);
+    pub async fn run(&self) {
         log::info!(
             "Starting TcpProxy {} -> {}",
             self.listen_address,
             self.connect_address
         );
 
-        let listener = TcpListener::bind(self.listen_address).await?;
+        let listener = match TcpListener::bind(self.listen_address.clone()).await {
+            Ok(l) => l,
+            Err(e) => {
+                log::error!(
+                    "Failed to start TcpListener at \"{}\" : {}",
+                    self.listen_address(),
+                    e
+                );
+
+                return;
+            }
+        };
 
         loop {
             let (source, downstream_addr) = match listener.accept().await {
@@ -37,71 +45,87 @@ impl TcpProxy {
                 Err(e) => {
                     log::error!(
                         "{} -> {}: Could not accept connection: {}",
-                        listen,
-                        connect,
+                        self.listen_address(),
+                        self.connect_address(),
                         e
                     );
                     continue;
                 }
             };
 
-            let downstream_addr = Arc::new(downstream_addr);
-            log::debug!("Downstream {} connected to {}", downstream_addr, listen);
+            log::debug!(
+                "Downstream {} connected to {}",
+                downstream_addr,
+                self.listen_address()
+            );
 
-            let target = match TcpStream::connect(self.connect_address).await {
+            let target = match TcpStream::connect(self.connect_address()).await {
                 Ok(target) => target,
                 Err(e) => {
                     log::error!(
                         "{} -> {}: Could not connect to upstream: {}",
-                        listen,
-                        connect,
+                        self.listen_address(),
+                        self.connect_address(),
                         e
                     );
                     continue;
                 }
             };
 
-            log::debug!("Proxy {} connected to upstream {}", listen, connect);
+            log::debug!(
+                "Proxy {} connected to upstream {}",
+                self.listen_address(),
+                self.connect_address()
+            );
 
             let (source_read, source_write) = source.into_split();
             let (target_read, target_write) = target.into_split();
 
+            let listen = Arc::new(self.listen_address().clone());
+            let connect = Arc::new(self.connect_address().clone());
+
             let forward_task = tokio::spawn(handle_task(
                 source_read,
                 target_write,
-                downstream_addr.clone(),
+                downstream_addr,
                 listen.clone(),
                 connect.clone(),
             ));
             let backward_task = tokio::spawn(handle_task(
                 target_read,
                 source_write,
-                downstream_addr.clone(),
+                downstream_addr,
                 listen.clone(),
                 connect.clone(),
             ));
 
             tokio::select! {
-                _ = forward_task => log::debug!("Downstream {} closed the connection to {}", downstream_addr, listen),
-                _ = backward_task => log::debug!("Upstream {} closed the connection", connect),
+                _ = forward_task => log::debug!("Downstream {} closed the connection to {}", downstream_addr, self.listen_address()),
+                _ = backward_task => log::debug!("Upstream {} closed the connection", self.connect_address()),
             }
 
             log::debug!(
                 "{} -> {} -> {} connections closed",
                 downstream_addr,
-                listen,
-                connect
+                self.listen_address(),
+                self.connect_address()
             );
         }
     }
 }
 
-async fn handle_task<T: AsyncRead + Unpin, U: AsyncWrite + Unpin>(
+async fn handle_task<
+    T: AsyncRead + Unpin,
+    U: AsyncWrite + Unpin,
+    D: Display,
+    S: Display,
+    X: Display,
+>(
     source: T,
     mut target: U,
-    downstream_addr: Arc<SocketAddr>,
-    source_addr: Arc<SocketAddr>,
-    target_addr: Arc<SocketAddr>,
+    downstream_addr: D,
+    source_addr: S,
+    target_addr: X,
 ) {
     let mut br = BufReader::new(source);
     loop {
