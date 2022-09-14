@@ -1,7 +1,7 @@
 mod config;
 mod proxy;
 
-use color_eyre::eyre::{bail, Context, Result};
+use color_eyre::eyre::{bail, Result};
 use env_logger::Env;
 use futures::future::join_all;
 use proxy::TcpProxy;
@@ -25,13 +25,16 @@ async fn main() -> Result<()> {
         Some(proxy_list) => {
             proxies = Vec::with_capacity(proxy_list.len());
             for p in proxy_list {
-                for listen in lookup_host(p.listen())
-                    .await
-                    .wrap_err_with(|| format!("Failed to resolve {}", p.listen()))?
-                {
-                    log::debug!("Listen address {} resolved to {}", p.listen(), listen);
-                    let proxy = TcpProxy::new(listen, p.connect().to_string());
-                    proxies.push(proxy);
+                let resolved_addrs = lookup_host(p.listen()).await;
+                match resolved_addrs {
+                    Ok(addresses) => {
+                        for listen in addresses {
+                            log::debug!("Listen address {} resolved to {}", p.listen(), listen);
+                            let proxy = TcpProxy::new(listen, p.connect().to_string());
+                            proxies.push(proxy);
+                        }
+                    }
+                    Err(e) => log::error!("Failed to resolve {}: {}", p.listen(), e),
                 }
             }
         }
