@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use color_eyre::eyre::{eyre, Context, Result};
 use derive_getters::Getters;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
