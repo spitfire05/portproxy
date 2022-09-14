@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use derive_getters::Getters;
@@ -7,12 +8,12 @@ use tokio::net::{TcpListener, TcpStream};
 
 #[derive(Debug, Clone, Getters)]
 pub struct TcpProxy {
-    listen_address: String,
+    listen_address: SocketAddr,
     connect_address: String,
 }
 
 impl TcpProxy {
-    pub fn new(listen_address: String, connect_address: String) -> Self {
+    pub fn new(listen_address: SocketAddr, connect_address: String) -> Self {
         Self {
             listen_address,
             connect_address,
@@ -26,7 +27,7 @@ impl TcpProxy {
             self.connect_address
         );
 
-        let listener = match TcpListener::bind(self.listen_address.clone()).await {
+        let listener = match TcpListener::bind(self.listen_address).await {
             Ok(l) => l,
             Err(e) => {
                 log::error!(
@@ -39,7 +40,7 @@ impl TcpProxy {
             }
         };
 
-        let listen = Arc::new(self.listen_address().clone());
+        let listen = Arc::new(self.listen_address().to_owned());
         let connect = Arc::new(self.connect_address().clone());
 
         loop {

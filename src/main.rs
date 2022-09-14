@@ -1,10 +1,11 @@
 mod config;
 mod proxy;
 
-use color_eyre::eyre::{bail, Result};
+use color_eyre::eyre::{bail, Context, Result};
 use env_logger::Env;
 use futures::future::join_all;
 use proxy::TcpProxy;
+use tokio::net::lookup_host;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -24,8 +25,14 @@ async fn main() -> Result<()> {
         Some(proxy_list) => {
             proxies = Vec::with_capacity(proxy_list.len());
             for p in proxy_list {
-                let proxy = TcpProxy::new(p.listen().to_string(), p.connect().to_string());
-                proxies.push(proxy);
+                for listen in lookup_host(p.listen())
+                    .await
+                    .wrap_err_with(|| format!("Failed to resolve {}", p.listen()))?
+                {
+                    log::debug!("Listen address {} resolved to {}", p.listen(), listen);
+                    let proxy = TcpProxy::new(listen, p.connect().to_string());
+                    proxies.push(proxy);
+                }
             }
         }
     }
