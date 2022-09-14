@@ -11,7 +11,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    env_logger::Builder::from_env(Env::default().filter_or("PORTPROXY_LOG", "info")).init();
     color_eyre::install()?;
 
     log::info!("portproxy v{} starting...", VERSION);
