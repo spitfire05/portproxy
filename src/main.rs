@@ -1,28 +1,12 @@
 mod config;
 mod proxy;
 
-use std::net::SocketAddr;
-
-use color_eyre::eyre::{bail, eyre, Result, WrapErr};
+use color_eyre::eyre::{bail, Result};
 use env_logger::Env;
-use futures::future::try_join_all;
+use futures::future::join_all;
 use proxy::TcpProxy;
-use tokio::net::lookup_host;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-async fn str_to_sock_addr(input: &str) -> Result<SocketAddr> {
-    let results = lookup_host(input)
-        .await
-        .wrap_err_with(|| format!("Cannot resolve '{}' to socket address", input))?
-        .take(1)
-        .collect::<Vec<_>>();
-    if results.is_empty() {
-        return Err(eyre!("{} did not resolve as in IP address", input));
-    }
-
-    Ok(results[0])
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -40,16 +24,13 @@ async fn main() -> Result<()> {
         Some(proxy_list) => {
             proxies = Vec::with_capacity(proxy_list.len());
             for p in proxy_list {
-                let listen = str_to_sock_addr(p.listen()).await?;
-                let connect = str_to_sock_addr(p.connect()).await?;
-
-                let proxy = TcpProxy::new(listen, connect);
+                let proxy = TcpProxy::new(p.listen().to_string(), p.connect().to_string());
                 proxies.push(proxy);
             }
         }
     }
 
-    try_join_all(proxies.iter().map(|p| p.run())).await?;
+    join_all(proxies.iter().map(|p| p.run())).await;
 
     Ok(())
 }
