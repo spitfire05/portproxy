@@ -1,7 +1,10 @@
 mod config;
 mod proxy;
 
-use color_eyre::eyre::{bail, Result};
+use color_eyre::{
+    eyre::{bail, Result},
+    Help,
+};
 use env_logger::Env;
 use futures::future::join_all;
 use proxy::TcpProxy;
@@ -16,7 +19,9 @@ async fn main() -> Result<()> {
 
     log::info!("portproxy v{} starting...", VERSION);
 
-    let cfg = config::load()?;
+    let cfg = config::load().with_suggestion(|| {
+        "You can point to a specific config file by setting `PORTPROXY_CONFIG` env variable."
+    })?;
 
     let mut proxies;
 
@@ -40,7 +45,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    join_all(proxies.iter().map(|p| p.run())).await;
+    join_all(proxies.iter().map(proxy::TcpProxy::run)).await;
 
     log::info!("Nothing left to do, exiting..");
 
