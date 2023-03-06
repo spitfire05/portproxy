@@ -160,7 +160,7 @@ async fn handle_task<
         let plugins = plugins.clone();
         tokio::spawn(async move {
             for p in plugins.iter() {
-                p.exec(&move_rx).unwrap();
+                p.exec(&move_rx).unwrap(); // TODO: handle this properly!
             }
         });
 
