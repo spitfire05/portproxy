@@ -10,7 +10,7 @@ use tokio::{
 pub struct TcpProxy {
     listen_address: SocketAddr,
     connect_address: String,
-    plugins: Vec<Plugin>,
+    plugins: Arc<Vec<Plugin>>,
 }
 
 impl TcpProxy {
@@ -18,7 +18,7 @@ impl TcpProxy {
         Self {
             listen_address,
             connect_address,
-            plugins,
+            plugins: Arc::new(plugins),
         }
     }
 
@@ -133,7 +133,7 @@ async fn handle_task<
     downstream_addr: D,
     source_addr: S,
     target_addr: X,
-    plugins: Vec<Plugin>,
+    plugins: Arc<Vec<Plugin>>,
 ) {
     let mut br = BufReader::new(source);
     loop {
@@ -145,6 +145,7 @@ async fn handle_task<
                 break;
             }
         };
+        let rx = Arc::new(rx);
 
         let n_target = rx.len();
 
@@ -155,9 +156,13 @@ async fn handle_task<
             source_addr
         );
 
-        for p in &plugins {
-            p.exec(&rx).unwrap();
-        }
+        let move_rx = rx.clone();
+        let plugins = plugins.clone();
+        tokio::spawn(async move {
+            for p in plugins.iter() {
+                p.exec(&move_rx).unwrap();
+            }
+        });
 
         if n_target == 0 {
             log::trace!("Closing {} handler because of 0 bytes read", source_addr);

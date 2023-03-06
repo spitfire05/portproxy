@@ -1,6 +1,6 @@
 use color_eyre::eyre::Result;
 use pyo3::{types::PyModule, Py, PyAny, PyResult, Python};
-use std::{fs::read_to_string, path::Path};
+use std::{fs::read_to_string, path::Path, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Plugin {
