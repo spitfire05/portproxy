@@ -1,4 +1,7 @@
-use std::{env, fs};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use color_eyre::eyre::{eyre, Result, WrapErr};
 use derive_getters::Getters;
@@ -13,6 +16,13 @@ pub struct Config {
 pub struct Proxy {
     listen: String,
     connect: String,
+    plugins: Option<Vec<Plugin>>,
+}
+
+#[derive(Deserialize, Getters)]
+pub struct Plugin {
+    path: PathBuf,
+    config: String,
 }
 
 pub fn get_config_path() -> Option<String> {

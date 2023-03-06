@@ -1,22 +1,24 @@
-use std::fmt::Display;
-use std::net::SocketAddr;
-use std::sync::Arc;
-
+use crate::plugin::Plugin;
 use derive_getters::Getters;
-use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream};
+use std::{fmt::Display, net::SocketAddr, sync::Arc};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
+    net::{TcpListener, TcpStream},
+};
 
 #[derive(Debug, Clone, Getters)]
 pub struct TcpProxy {
     listen_address: SocketAddr,
     connect_address: String,
+    plugins: Vec<Plugin>,
 }
 
 impl TcpProxy {
-    pub fn new(listen_address: SocketAddr, connect_address: String) -> Self {
+    pub fn new(listen_address: SocketAddr, connect_address: String, plugins: Vec<Plugin>) -> Self {
         Self {
             listen_address,
             connect_address,
+            plugins,
         }
     }
 
@@ -65,6 +67,7 @@ impl TcpProxy {
 
             let listen = listen.clone();
             let connect = connect.clone();
+            let plugins = self.plugins.clone();
 
             tokio::spawn(async move {
                 let target = match TcpStream::connect(connect.as_str()).await {
@@ -91,6 +94,7 @@ impl TcpProxy {
                     downstream_addr,
                     listen.clone(),
                     connect.clone(),
+                    plugins.clone(),
                 ));
                 let backward_task = tokio::spawn(handle_task(
                     target_read,
@@ -98,6 +102,7 @@ impl TcpProxy {
                     downstream_addr,
                     listen.clone(),
                     connect.clone(),
+                    plugins.clone(),
                 ));
 
                 tokio::select! {
@@ -128,6 +133,7 @@ async fn handle_task<
     downstream_addr: D,
     source_addr: S,
     target_addr: X,
+    plugins: Vec<Plugin>,
 ) {
     let mut br = BufReader::new(source);
     loop {
@@ -148,6 +154,10 @@ async fn handle_task<
             downstream_addr,
             source_addr
         );
+
+        for p in &plugins {
+            p.exec(&rx).unwrap();
+        }
 
         if n_target == 0 {
             log::trace!("Closing {} handler because of 0 bytes read", source_addr);
