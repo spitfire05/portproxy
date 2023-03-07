@@ -14,6 +14,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    pyo3_pylogger::register("example_application_py_logger");
     env_logger::Builder::from_env(Env::default().filter_or("PORTPROXY_LOG", "info")).init();
     color_eyre::install()?;
 

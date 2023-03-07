@@ -11,7 +11,12 @@ categories = ["command-line-utilities", "network-programming"]
 
 [dependencies]
 color-eyre = "0.6"
-tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "macros"] }
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "net",
+    "io-util",
+    "macros",
+] }
 toml = "0.5"
 derive-getters = "0.2"
 log = "0.4"
@@ -19,7 +24,8 @@ env_logger = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 dirs = "4.0.0"
-pyo3 = { version = "0.18.1", features = ["eyre"] }
+pyo3 = { version = "0.17", features = ["eyre"] }
+pyo3-pylogger = "0.2.0"
 
 [dev-dependencies]
 rand = "0.8.5"
