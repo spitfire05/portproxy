@@ -1,6 +1,8 @@
 mod config;
+mod plugin;
 mod proxy;
 
+use crate::plugin::init;
 use color_eyre::eyre::{bail, Result};
 use env_logger::Env;
 use futures::future::join_all;
@@ -30,7 +32,7 @@ async fn main() -> Result<()> {
                     Ok(addresses) => {
                         for listen in addresses {
                             log::debug!("Listen address {} resolved to {}", p.listen(), listen);
-                            let proxy = TcpProxy::new(listen, p.connect().to_string());
+                            let proxy = TcpProxy::new(listen, p.connect().to_string(), init()?);
                             proxies.push(proxy);
                         }
                     }

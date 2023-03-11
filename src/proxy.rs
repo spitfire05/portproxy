@@ -1,22 +1,27 @@
 use std::fmt::Display;
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use derive_getters::Getters;
+use rlua::{Function, Lua, Table, Value};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
-#[derive(Debug, Clone, Getters)]
+use crate::plugin::Engine;
+
+#[derive(Debug, Getters)]
 pub struct TcpProxy {
     listen_address: SocketAddr,
     connect_address: String,
+    plugin_engine: Arc<Mutex<Engine>>,
 }
 
 impl TcpProxy {
-    pub fn new(listen_address: SocketAddr, connect_address: String) -> Self {
+    pub fn new(listen_address: SocketAddr, connect_address: String, plugin_engine: Engine) -> Self {
         Self {
             listen_address,
             connect_address,
+            plugin_engine: Arc::new(Mutex::new(plugin_engine)),
         }
     }
 
@@ -65,6 +70,7 @@ impl TcpProxy {
 
             let listen = listen.clone();
             let connect = connect.clone();
+            let plugin_engine = self.plugin_engine.clone();
 
             tokio::spawn(async move {
                 let target = match TcpStream::connect(connect.as_str()).await {
@@ -91,6 +97,7 @@ impl TcpProxy {
                     downstream_addr,
                     listen.clone(),
                     connect.clone(),
+                    plugin_engine.clone(),
                 ));
                 let backward_task = tokio::spawn(handle_task(
                     target_read,
@@ -98,6 +105,7 @@ impl TcpProxy {
                     downstream_addr,
                     listen.clone(),
                     connect.clone(),
+                    plugin_engine.clone(),
                 ));
 
                 tokio::select! {
@@ -128,6 +136,7 @@ async fn handle_task<
     downstream_addr: D,
     source_addr: S,
     target_addr: X,
+    engine: Arc<Mutex<Engine>>,
 ) {
     let mut br = BufReader::new(source);
     loop {
@@ -141,6 +150,11 @@ async fn handle_task<
         };
 
         let n_target = rx.len();
+
+        engine
+            .try_lock()
+            .expect("could not acquire lock")
+            .on_rx(&rx);
 
         log::trace!(
             "{} bytes read from {} at {}",
