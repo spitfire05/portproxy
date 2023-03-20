@@ -1,12 +1,9 @@
 mod config;
 mod proxy;
 
-use color_eyre::{
-    eyre::{bail, Result},
-    Help,
-};
 use env_logger::Env;
 use futures::future::join_all;
+use miette::{bail, Result};
 use proxy::TcpProxy;
 use tokio::net::lookup_host;
 
@@ -15,13 +12,10 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::Builder::from_env(Env::default().filter_or("PORTPROXY_LOG", "info")).init();
-    color_eyre::install()?;
 
     log::info!("portproxy v{} starting...", VERSION);
 
-    let cfg = config::load().with_suggestion(|| {
-        "You can point to a specific config file by setting `PORTPROXY_CONFIG` env variable."
-    })?;
+    let cfg = config::load()?;
 
     let mut proxies;
 

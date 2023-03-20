@@ -10,20 +10,21 @@ keywords = ["networking", "proxy", "forwarding"]
 categories = ["command-line-utilities", "network-programming"]
 
 [dependencies]
-color-eyre = "0.6"
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "net",
     "io-util",
     "macros",
 ] }
-toml = "0.5"
+toml = "0.7.3"
 derive-getters = "0.2"
 log = "0.4"
-env_logger = "0.9"
+env_logger = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 dirs = "4.0.0"
+miette = { version = "5.6.0", features = ["fancy"] }
+thiserror = "1.0.40"
 
 [dev-dependencies]
 rand = "0.8.5"
@@ -33,6 +34,7 @@ escargot = "0.5"
 scopeguard = "1.1.0"
 assert_cmd = "2.0.4"
 predicates = "1"
+anyhow = "1.0.70"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

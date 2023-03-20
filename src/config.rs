@@ -1,8 +1,9 @@
 use std::{env, fs};
 
-use color_eyre::eyre::{eyre, Result, WrapErr};
 use derive_getters::Getters;
+use miette::{Diagnostic, Result};
 use serde::Deserialize;
+use thiserror::Error;
 
 #[derive(Deserialize, Getters)]
 pub struct Config {
@@ -13,6 +14,25 @@ pub struct Config {
 pub struct Proxy {
     listen: String,
     connect: String,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+pub enum Error {
+    #[error("Faile ot get config path")]
+    ConfigPathNotFound,
+
+    #[diagnostic(help("You can set specific config file to use by setting the `PORTPROXY_CONFIG` environment variable"))]
+    #[error(r#"Can not open file "{path}""#)]
+    Io {
+        path: String,
+        source: std::io::Error,
+    },
+
+    #[error(r#"Parsing config file "{path}" failed"#)]
+    Parse {
+        path: String,
+        source: toml::de::Error,
+    },
 }
 
 pub fn get_config_path() -> Option<String> {
@@ -32,11 +52,13 @@ pub fn get_config_path() -> Option<String> {
     }
 }
 
-pub fn load() -> Result<Config> {
-    let path = get_config_path().ok_or(eyre!("Failed to get config path"))?;
-    let cfg_bytes = fs::read(&path).wrap_err_with(|| eyre!("Cannot open file \"{}\"", path))?;
-    let cfg: Config =
-        toml::from_slice(&cfg_bytes).wrap_err_with(|| eyre!("Cannot parse config"))?;
+pub fn load() -> Result<Config, Error> {
+    let path = get_config_path().ok_or(Error::ConfigPathNotFound)?;
+    let cfg_str = fs::read_to_string(&path).map_err(|e| Error::Io {
+        path: path.clone(),
+        source: e,
+    })?;
+    let cfg: Config = toml::from_str(&cfg_str).map_err(|e| Error::Parse { path, source: e })?;
 
     Ok(cfg)
 }
