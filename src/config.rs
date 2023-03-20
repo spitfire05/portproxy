@@ -54,11 +54,11 @@ pub fn get_config_path() -> Option<String> {
 
 pub fn load() -> Result<Config, Error> {
     let path = get_config_path().ok_or(Error::ConfigPathNotFound)?;
-    let cfg_bytes = fs::read(&path).map_err(|e| Error::Io {
+    let cfg_str = fs::read_to_string(&path).map_err(|e| Error::Io {
         path: path.clone(),
         source: e,
     })?;
-    let cfg: Config = toml::from_slice(&cfg_bytes).map_err(|e| Error::Parse { path, source: e })?;
+    let cfg: Config = toml::from_str(&cfg_str).map_err(|e| Error::Parse { path, source: e })?;
 
     Ok(cfg)
 }
