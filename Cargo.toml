@@ -15,7 +15,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "macro
 toml = "0.5"
 derive-getters = "0.2"
 log = "0.4"
-env_logger = "0.9"
+env_logger = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 dirs = "4.0.0"
