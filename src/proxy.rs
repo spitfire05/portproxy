@@ -40,7 +40,7 @@ impl TcpProxy {
             }
         };
 
-        let listen = Arc::new(self.listen_address().to_owned());
+        let listen = Arc::new(*self.listen_address());
         let connect = Arc::new(self.connect_address().clone());
 
         loop {
