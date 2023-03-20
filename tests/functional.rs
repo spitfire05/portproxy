@@ -1,5 +1,5 @@
+use anyhow::{anyhow, Result};
 use assert_cmd::prelude::*;
-use color_eyre::eyre::{eyre, Result};
 use rand::Rng;
 use scopeguard::defer;
 use std::{fs, process::Command, thread, time::Duration};
@@ -68,7 +68,7 @@ fn functional() -> Result<()> {
     let read = reqwest::blocking::get("http://127.0.0.1:8001/data")?.text()?;
 
     if read != data {
-        return Err(eyre!("Read data does not match the generated one"));
+        return Err(anyhow!("Read data does not match the generated one"));
     }
 
     Ok(())
