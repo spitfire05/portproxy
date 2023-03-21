@@ -88,11 +88,11 @@ impl Tcp {
                 let forward_task = tokio::spawn(handle_task(
                     source_read,
                     target_write,
-                ).instrument(info_span!("forward task", downstream_address = downstream_addr.to_string())));
+                ).instrument(info_span!("fwd", downstream_address = downstream_addr.to_string())));
                 let backward_task = tokio::spawn(handle_task(
                     target_read,
                     source_write,
-                ).instrument(info_span!("backward task", downstream_address = downstream_addr.to_string())));
+                ).instrument(info_span!("bwd", downstream_address = downstream_addr.to_string())));
 
                 tokio::select! {
                     _ = forward_task => tracing::debug!("Downstream {} closed the connection to {}", downstream_addr, listen),
@@ -105,7 +105,7 @@ impl Tcp {
                     listen,
                     connect,
                 );
-            }.instrument(info_span!(parent: &self.span, "tcp handler")));
+            }.instrument(info_span!(parent: &self.span, "handler")));
         }
     }
 }
