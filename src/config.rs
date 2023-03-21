@@ -17,7 +17,7 @@ pub struct Proxy {
 
 #[derive(Error, Diagnostic, Debug)]
 pub enum Error {
-    #[error("Faile ot get config path")]
+    #[error("Failed to get config path")]
     ConfigPathNotFound,
 
     #[diagnostic(help(
