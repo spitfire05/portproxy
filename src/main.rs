@@ -10,9 +10,11 @@ use tokio::net::lookup_host;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser, Debug)]
-#[command(version)]
+#[command(version, about)]
 struct Args {
     /// Path to read the config from.
+    /// If not set, will fall back to value of $PORTPROXY_CONFIG,
+    /// and "~/.config/portproxy.toml", in that order
     #[arg(short, long)]
     config_path: Option<String>,
 
