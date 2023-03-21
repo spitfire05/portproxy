@@ -1,8 +1,7 @@
-use std::{env, fs};
-
 use derive_getters::Getters;
 use miette::{Diagnostic, Result};
 use serde::Deserialize;
+use std::{env, fs};
 use thiserror::Error;
 
 #[derive(Deserialize, Getters)]
@@ -21,7 +20,10 @@ pub enum Error {
     #[error("Faile ot get config path")]
     ConfigPathNotFound,
 
-    #[diagnostic(help("You can set specific config file to use by setting the `PORTPROXY_CONFIG` environment variable"))]
+    #[diagnostic(help(
+        "You can set specific config file to use with `--config <PATH>`, \
+        or by setting the `PORTPROXY_CONFIG` environment variable"
+    ))]
     #[error(r#"Can not open file "{path}""#)]
     Io {
         path: String,

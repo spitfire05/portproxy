@@ -4,7 +4,7 @@ mod proxy;
 use clap::{builder::TypedValueParser as _, Parser};
 use futures::future::join_all;
 use miette::{bail, Result};
-use proxy::TcpProxy;
+use proxy::Tcp;
 use tokio::net::lookup_host;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
                     Ok(addresses) => {
                         for listen in addresses {
                             tracing::debug!("Listen address {} resolved to {}", p.listen(), listen);
-                            let proxy = TcpProxy::new(listen, p.connect().to_string());
+                            let proxy = Tcp::new(listen, p.connect());
                             proxies.push(proxy);
                         }
                     }
@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    join_all(proxies.iter().map(proxy::TcpProxy::run)).await;
+    join_all(proxies.iter().map(proxy::Tcp::run)).await;
 
     tracing::info!("Nothing left to do, exiting..");
 

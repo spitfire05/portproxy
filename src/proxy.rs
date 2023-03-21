@@ -1,26 +1,25 @@
-use std::fmt::Display;
-use std::net::SocketAddr;
-use std::sync::Arc;
-
 use derive_getters::Getters;
-use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream};
-use tracing::{debug_span, info_span, span, Instrument, Level};
+use std::{net::SocketAddr, sync::Arc};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
+    net::{TcpListener, TcpStream},
+};
+use tracing::{info_span, Instrument};
 
 #[derive(Debug, Clone, Getters)]
-pub struct TcpProxy {
+pub struct Tcp {
     listen_address: SocketAddr,
     connect_address: String,
     span: tracing::span::Span,
 }
 
-impl TcpProxy {
-    pub fn new(listen_address: SocketAddr, connect_address: String) -> Self {
+impl Tcp {
+    pub fn new(listen_address: SocketAddr, connect_address: &str) -> Self {
         Self {
             listen_address,
             connect_address: connect_address.to_string(),
             span: info_span!(
-                "TCP Proxy",
+                "TCP",
                 listen = listen_address.to_string(),
                 connect = connect_address
             ),
@@ -31,7 +30,6 @@ impl TcpProxy {
         self.run_internal().instrument(self.span.clone()).await;
     }
 
-    // #[tracing::instrument(level = "error", name = "TCP Proxy", skip(self), fields(listen = self.listen_address.to_string(), connect = self.connect_address.to_string()))]
     async fn run_internal(&self) {
         tracing::info!("Starting");
 
@@ -107,7 +105,7 @@ impl TcpProxy {
                     listen,
                     connect,
                 );
-            }.instrument(info_span!(parent: &self.span, "downstream handler")));
+            }.instrument(info_span!(parent: &self.span, "tcp handler")));
         }
     }
 }
