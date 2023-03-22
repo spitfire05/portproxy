@@ -1,21 +1,40 @@
 mod config;
 mod proxy;
 
-use env_logger::Env;
+use clap::{builder::TypedValueParser as _, Parser};
 use futures::future::join_all;
 use miette::{bail, Result};
-use proxy::TcpProxy;
+use proxy::Tcp;
 use tokio::net::lookup_host;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Parser, Debug)]
+#[command(version, about)]
+struct Args {
+    /// Path to read the config from.
+    /// If not set, will fall back to value of $PORTPROXY_CONFIG,
+    /// and "~/.config/portproxy.toml", in that order
+    #[arg(short, long)]
+    config_path: Option<String>,
+
+    #[arg(short, long,
+        default_value = "info",
+        value_parser = clap::builder::PossibleValuesParser::new(["error", "warn", "info", "debug", "trace"]).map(|s| s.parse::<tracing::Level>().unwrap()))]
+    log_level: tracing::Level,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().filter_or("PORTPROXY_LOG", "info")).init();
+    let args = Args::parse();
 
-    log::info!("portproxy v{} starting...", VERSION);
+    tracing_subscriber::fmt()
+        .with_max_level(args.log_level)
+        .init();
 
-    let cfg = config::load()?;
+    tracing::info!("portproxy v{} starting...", VERSION);
+
+    let cfg = config::load(args.config_path)?;
 
     let mut proxies;
 
@@ -28,20 +47,20 @@ async fn main() -> Result<()> {
                 match resolved_addrs {
                     Ok(addresses) => {
                         for listen in addresses {
-                            log::debug!("Listen address {} resolved to {}", p.listen(), listen);
-                            let proxy = TcpProxy::new(listen, p.connect().to_string());
+                            tracing::debug!("Listen address {} resolved to {}", p.listen(), listen);
+                            let proxy = Tcp::new(listen, p.connect());
                             proxies.push(proxy);
                         }
                     }
-                    Err(e) => log::error!("Failed to resolve {}: {}", p.listen(), e),
+                    Err(e) => tracing::error!("Failed to resolve {}: {}", p.listen(), e),
                 }
             }
         }
     }
 
-    join_all(proxies.iter().map(proxy::TcpProxy::run)).await;
+    join_all(proxies.iter().map(proxy::Tcp::run)).await;
 
-    log::info!("Nothing left to do, exiting..");
+    tracing::info!("Nothing left to do, exiting..");
 
     Ok(())
 }
