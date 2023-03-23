@@ -56,8 +56,7 @@ fn functional() -> Result<()> {
         .current_target()
         .run()?
         .command()
-        .env("RUST_LOG", "debug")
-        .env("PORTPROXY_CONFIG", &config_path)
+        .args(["-l", "trace", "-c", config_path.to_str().unwrap()])
         .spawn()?;
     defer!(portproxy.kill().expect("could not kill portproxy"));
 
