@@ -29,6 +29,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     tracing_subscriber::fmt()
+        .with_ansi(std::env::var("NO_COLOR").is_err())
         .with_max_level(args.log_level)
         .init();
 
