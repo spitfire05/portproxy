@@ -6,9 +6,7 @@ use futures::future::join_all;
 use miette::{bail, IntoDiagnostic, Result};
 use proxy::Tcp;
 use tokio::net::lookup_host;
-use tracing_subscriber::{
-    fmt::writer::MakeWriterExt, prelude::__tracing_subscriber_SubscriberExt, Layer,
-};
+use tracing_subscriber::{fmt::writer::MakeWriterExt, layer::SubscriberExt};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -26,6 +24,7 @@ struct Args {
         value_parser = clap::builder::PossibleValuesParser::new(["error", "warn", "info", "debug", "trace"]).map(|s| s.parse::<tracing::Level>().unwrap()))]
     log_level: tracing::Level,
 
+    /// Directory to write the log files to. Logging to file will be disabled if this is not set
     #[arg(short('d'), long)]
     log_dir: Option<String>,
 }
