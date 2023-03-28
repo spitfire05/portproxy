@@ -41,7 +41,7 @@ Windows binaries are avialable in the releases section of this repo.
 
 Config should contain one or more `[[proxy]]` elements, that define the port mappings:
 
-```toml
+```
 [[proxy]]
 listen = "localhost:8080"        # local address to listen on
 connect = "some-server.lan:8485" # remote (or local) address to connect to
@@ -59,3 +59,14 @@ Options:
   -h, --help                       Print help
   -V, --version                    Print version
 ```
+
+### As a service/daemon
+
+#### Windows
+
+Use [Shawl](https://github.com/mtkennerly/shawl) to create a windows service of `portproxy`.
+
+```
+shawl add --no-restart --no-log --name portproxy -- C:\full\path\to\portproxy.exe <optional args> // TODO: add file logging
+```
+
