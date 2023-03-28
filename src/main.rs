@@ -3,9 +3,12 @@ mod proxy;
 
 use clap::{builder::TypedValueParser as _, Parser};
 use futures::future::join_all;
-use miette::{bail, Result};
+use miette::{bail, IntoDiagnostic, Result};
 use proxy::Tcp;
 use tokio::net::lookup_host;
+use tracing_subscriber::{
+    fmt::writer::MakeWriterExt, prelude::__tracing_subscriber_SubscriberExt, Layer,
+};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -22,16 +25,46 @@ struct Args {
         default_value = "info",
         value_parser = clap::builder::PossibleValuesParser::new(["error", "warn", "info", "debug", "trace"]).map(|s| s.parse::<tracing::Level>().unwrap()))]
     log_level: tracing::Level,
+
+    #[arg(short('d'), long)]
+    log_dir: Option<String>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    tracing_subscriber::fmt()
-        .with_ansi(std::env::var("NO_COLOR").is_err())
-        .with_max_level(args.log_level)
-        .init();
+    let std_layer = tracing_subscriber::fmt::Layer::default()
+        .with_writer(std::io::stderr.with_max_level(args.log_level))
+        .with_ansi(std::env::var("NO_COLOR").is_err());
+
+    let (subscriber, _guard): (
+        Box<dyn tracing::Subscriber + Send + Sync>,
+        Option<tracing_appender::non_blocking::WorkerGuard>,
+    ) = match args.log_dir {
+        Some(ld) => {
+            let file_appender = tracing_appender::rolling::daily(ld, "portproxy");
+            let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
+
+            (
+                Box::new(
+                    tracing_subscriber::Registry::default()
+                        .with(std_layer)
+                        .with(
+                            tracing_subscriber::fmt::Layer::default()
+                                .with_writer(file_writer.with_max_level(args.log_level)),
+                        ),
+                ),
+                Some(guard),
+            )
+        }
+        None => (
+            Box::new(tracing_subscriber::Registry::default().with(std_layer)),
+            None,
+        ),
+    };
+
+    tracing::subscriber::set_global_default(subscriber).into_diagnostic()?;
 
     tracing::info!("portproxy v{} starting...", VERSION);
 
@@ -59,7 +92,11 @@ async fn main() -> Result<()> {
         }
     }
 
-    join_all(proxies.iter().map(proxy::Tcp::run)).await;
+    tokio::spawn(async move {
+        join_all(proxies.iter().map(proxy::Tcp::run)).await;
+    });
+
+    tokio::signal::ctrl_c().await.into_diagnostic()?;
 
     tracing::info!("Nothing left to do, exiting..");
 
