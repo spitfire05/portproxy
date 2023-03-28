@@ -20,7 +20,7 @@ toml = "0.7.3"
 derive-getters = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
-dirs = "4.0.0"
+dirs = "5.0.0"
 miette = { version = "5.6.0", features = ["fancy"] }
 thiserror = "1.0.40"
 clap = { version = "4.1.11", features = ["derive"] }
@@ -29,12 +29,12 @@ tracing-subscriber = "0.3.16"
 
 [dev-dependencies]
 rand = "0.8.5"
-tempfile = "3.3.0"
+tempfile = "3.4.0"
 reqwest = { version = "0.11", features = ["blocking"] }
 escargot = "0.5"
 scopeguard = "1.1.0"
 assert_cmd = "2.0.5"
-predicates = "2"
+predicates = "3"
 anyhow = "1.0.70"
 
 # The profile that 'cargo dist' will build with
@@ -47,7 +47,7 @@ lto = "thin"
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.0.5"
 # The preferred Rust toolchain to use in CI (rustup toolchain syntax)
-rust-toolchain-version = "1.67.1"
+rust-toolchain-version = "stable"
 # CI backends to support (see 'cargo dist generate-ci')
 ci = ["github"]
 # Target platforms to build apps for (Rust target-triple syntax)
