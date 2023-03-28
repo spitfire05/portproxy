@@ -1,0 +1,9 @@
+{
+    "changelog": true,
+    "artifacts": {
+        "cargo_dist": true,
+        "package_managers": {
+            "crates.io": "cargo install portproxy"
+        }
+    }
+}
