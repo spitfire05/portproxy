@@ -1,7 +1,8 @@
 # portproxy
 Simple port forwarding tool, built with tokio-rs 🦀
 
-[![Crates.io](https://img.shields.io/crates/v/portproxy)](https://crates.io/crates/portproxy)
+[![github](https://img.shields.io/badge/github-spitfire05/portproxy-lightgrey?style=for-the-badge&logo=github)](https://github.com/spitfire05/portproxy)
+[![Crates.io](https://img.shields.io/crates/v/portproxy?style=for-the-badge&logo=rust)](https://crates.io/crates/portproxy)
 
 ## What does it do?
 Pretty much the very same thing as Windows' `netsh interface portproxy` or Linux's `iptables` forward - it maps the incoming connections from `listen` local adress & port to remote `connect` address and port.
