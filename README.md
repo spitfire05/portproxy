@@ -69,6 +69,6 @@ Options:
 Use [Shawl](https://github.com/mtkennerly/shawl) to create a windows service of `portproxy`.
 
 ```
-shawl add --no-restart --no-log --name portproxy -- C:\full\path\to\portproxy.exe <optional args> // TODO: add file logging
+shawl add --no-restart --no-log --name portproxy -- C:\full\path\to\portproxy.exe --log-level debug --log-dir C:\full\path\to\logs\directory <optional args>
 ```
 
