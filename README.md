@@ -1,7 +1,8 @@
 # portproxy
 Simple port forwarding tool, built with tokio-rs 🦀
 
-[![Crates.io](https://img.shields.io/crates/v/portproxy)](https://crates.io/crates/portproxy)
+[![github](https://img.shields.io/badge/github-spitfire05/portproxy-lightgrey?style=for-the-badge&logo=github)](https://github.com/spitfire05/portproxy)
+[![Crates.io](https://img.shields.io/crates/v/portproxy?style=for-the-badge&logo=rust)](https://crates.io/crates/portproxy)
 
 ## What does it do?
 Pretty much the very same thing as Windows' `netsh interface portproxy` or Linux's `iptables` forward - it maps the incoming connections from `listen` local adress & port to remote `connect` address and port.
@@ -51,11 +52,12 @@ connect = "some-server.lan:8485" # remote (or local) address to connect to
 Running is as simple as it can be - just call the `portproxy` binary. There are optional flags/parameters:
 
 ```
-Usage: portproxy.exe [OPTIONS]
+Usage: portproxy [OPTIONS]
 
 Options:
   -c, --config-path <CONFIG_PATH>  Path to read the config from. If not set, will fall back to value of $PORTPROXY_CONFIG, and "~/.config/portproxy.toml", in that order
   -l, --log-level <LOG_LEVEL>      [default: info] [possible values: error, warn, info, debug, trace]
+  -d, --log-dir <LOG_DIR>          Directory to write the log files to. Logging to file will be disabled if this is not set
   -h, --help                       Print help
   -V, --version                    Print version
 ```
