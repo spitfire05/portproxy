@@ -3,6 +3,7 @@
 ## Added
 
 - Command line options `--log-level` & `--config`
+- Command line option `--log-dir`
 
 ## Removed
 
@@ -11,6 +12,10 @@
 ## Changed
 
 - Logs are now more structured
+
+## Fixed
+
+- `ctrl-c` shutdown should now be graceful on all platforms
 
 # 0.2.0
 
