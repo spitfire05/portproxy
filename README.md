@@ -9,7 +9,7 @@ Pretty much the very same thing as Windows' `netsh interface portproxy` or Linux
 
 Only TCP port forwarding is supported at this time.
 
-This tool does not currently offer anything more over the native OS  tools, maybe besides the unification and ease of defining the mappings.
+This tool does not currently offer anything more over the native OS tools, maybe besides the unification and ease of defining the mappings. Other notable use case is those rare instances were native port forwarding tool cannot be used (for example, windows' `netsh portproxy` requires IPv6 to be enabled on the system).
 
 ## Install
 
@@ -34,15 +34,17 @@ Windows binaries are avialable in the releases section of this repo.
 
 ## Configuration
 
+Configuration is specified in the [TOML](https://toml.io/) language.
+
 `portproxy` will try to read the config for paths in following order:
 
 1) `--config` CLI arg, if set
 2) Value of `PORTPROXY_CONFIG` env variable, if set
-3) `~/.config/portproxy/toml`
+3) `~/.config/portproxy.toml`
 
 Config should contain one or more `[[proxy]]` elements, that define the port mappings:
 
-```
+```toml
 [[proxy]]
 listen = "localhost:8080"        # local address to listen on
 connect = "some-server.lan:8485" # remote (or local) address to connect to
