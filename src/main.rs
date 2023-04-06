@@ -6,7 +6,9 @@ use futures::future::join_all;
 use miette::{bail, IntoDiagnostic, Result};
 use proxy::Tcp;
 use tokio::net::lookup_host;
-use tracing_subscriber::{fmt::writer::MakeWriterExt, layer::SubscriberExt};
+use tracing_subscriber::{
+    fmt::writer::MakeWriterExt, layer::SubscriberExt, prelude::__tracing_subscriber_field_MakeExt,
+};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -42,15 +44,22 @@ async fn main() -> Result<()> {
         Option<tracing_appender::non_blocking::WorkerGuard>,
     ) = match args.log_dir {
         Some(ld) => {
-            let file_appender = tracing_appender::rolling::daily(ld, "portproxy");
+            let file_appender = tracing_appender::rolling::daily(ld, "portproxy.log");
             let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
-
             (
                 Box::new(
                     tracing_subscriber::Registry::default()
                         .with(std_layer)
                         .with(
                             tracing_subscriber::fmt::Layer::default()
+                                .with_ansi(false)
+                                // need custom fields formatter here, as the default one doe snot respect `with_ansi` :(
+                                .fmt_fields(
+                                    tracing_subscriber::fmt::format::debug_fn(
+                                        |writer, field, value| write!(writer, "{field}: {value:?}"),
+                                    )
+                                    .delimited(", "),
+                                )
                                 .with_writer(file_writer.with_max_level(args.log_level)),
                         ),
                 ),
