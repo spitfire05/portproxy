@@ -2,7 +2,7 @@
 
 ## Fixed
 
-- File log output no should no longre contiain ANSI escape characters
+- File log output no should no longer contain ANSI escape characters
 
 # 0.3.0
 
