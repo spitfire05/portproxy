@@ -1,3 +1,9 @@
+# 0.3.1
+
+## Fixed
+
+- File log output no should no longre contiain ANSI escape characters
+
 # 0.3.0
 
 ## Added
