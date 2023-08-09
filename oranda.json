@@ -1,9 +1,16 @@
 {
-    "changelog": true,
-    "artifacts": {
-        "cargo_dist": true,
-        "package_managers": {
-            "crates.io": "cargo install portproxy"
+    "styles": {
+        "theme": "axodark"
+    },
+    "components": {
+        "changelog": true,
+        "artifacts": {
+            "auto": true,
+            "package_managers": {
+                "preferred": {
+                    "crates.io": "cargo install portproxy"
+                }
+            }
         }
     }
 }
