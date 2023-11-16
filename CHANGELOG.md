@@ -1,3 +1,9 @@
+# Unreleased
+
+## Fixed
+
+- Updated dependencies to fix some potential security issues
+
 # 0.3.1
 
 ## Fixed
