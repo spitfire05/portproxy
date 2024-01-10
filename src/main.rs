@@ -36,8 +36,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     let std_layer = tracing_subscriber::fmt::Layer::default()
-        .with_writer(std::io::stderr.with_max_level(args.log_level))
-        .with_ansi(std::env::var("NO_COLOR").is_err());
+        .with_writer(std::io::stderr.with_max_level(args.log_level));
 
     let (subscriber, _guard): (
         Box<dyn tracing::Subscriber + Send + Sync>,
