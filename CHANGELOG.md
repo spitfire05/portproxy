@@ -3,6 +3,7 @@
 ## Fixed
 
 - Updated dependencies to fix some potential security issues
+- ANSI colored output on windows legacy console host
 
 # 0.3.1
 

@@ -31,9 +31,31 @@ struct Args {
     log_dir: Option<String>,
 }
 
+#[cfg(windows)]
+fn fix_legacy_windows_console() -> Result<()> {
+    use windows::Win32::System::Console::{
+        GetConsoleMode, GetStdHandle, SetConsoleMode, CONSOLE_MODE, ENABLE_PROCESSED_OUTPUT,
+        ENABLE_VIRTUAL_TERMINAL_PROCESSING, STD_OUTPUT_HANDLE,
+    };
+
+    unsafe {
+        let handle = GetStdHandle(STD_OUTPUT_HANDLE).into_diagnostic()?;
+        let mut mode = CONSOLE_MODE::default();
+        let mode_ptr = std::ptr::addr_of_mut!(mode);
+        GetConsoleMode(handle, mode_ptr).into_diagnostic()?;
+        mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode(handle, mode).into_diagnostic()?;
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
+
+    #[cfg(windows)]
+    fix_legacy_windows_console()?;
 
     let std_layer = tracing_subscriber::fmt::Layer::default()
         .with_writer(std::io::stderr.with_max_level(args.log_level))
