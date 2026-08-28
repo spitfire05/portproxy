@@ -74,4 +74,61 @@ Use [Shawl](https://github.com/mtkennerly/shawl) to create a windows service of 
 shawl add --no-restart --no-log --name portproxy -- C:\full\path\to\portproxy.exe --log-level debug --log-dir C:\full\path\to\logs\directory <optional args>
 ```
 
+### Nix
+
+#### Run directly
+
+```sh
+nix run github:spitfire05/portproxy
+```
+
+#### NixOS module
+
+portproxy ships a NixOS module. To use it, add this repo as a flake input and enable the service.
+
+**1. Add the flake input** — in your `flake.nix` `inputs` block:
+```nix
+{
+  inputs = {
+    # ... your other inputs
+    portproxy.url = "github:spitfire05/portproxy";
+  };
+```
+
+**2. Import the module** — in your NixOS configuration's `modules` list:
+```nix
+nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+  system = "x86_64-linux";
+  modules = [
+    # ... your other modules
+    portproxy.nixosModules.default
+  ];
+};
+```
+
+**3. Configure the service.** Use inline proxy definitions:
+```nix
+services.portproxy = {
+  enable = true;
+  proxies = [
+    { listen = ":8080"; connect = "internal.lan:80"; }
+    { listen = ":9090"; connect = "internal.lan:443"; }
+  ];
+  logLevel = "info";
+  openFirewall = true;
+};
+```
+
+Or point to an external TOML config file:
+```nix
+services.portproxy = {
+  enable = true;
+  configPath = "/etc/portproxy.toml";
+};
+```
+
+> **Note:** `openFirewall` is not supported when using `configPath`, as the listen ports cannot be determined at Nix evaluation time from an external file.
+
+Available options: `enable`, `package`, `proxies`, `configPath`, `logLevel`, `logDir`, `openFirewall`.
+
 ****
