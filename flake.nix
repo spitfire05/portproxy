@@ -12,13 +12,16 @@
     } // utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        naersk-lib = pkgs.callPackage naersk { };
+        rust = pkgs.rustPackages_1_97;
+        naersk-lib = pkgs.callPackage naersk {
+          inherit (rust) cargo rustc clippy;
+        };
       in
       {
         packages.default = naersk-lib.buildPackage ./.;
-        devShells.default = with pkgs; mkShell {
-          buildInputs = [ cargo rustc rustfmt pre-commit rustPackages.clippy ];
-          RUST_SRC_PATH = rustPlatform.rustLibSrc;
+        devShells.default = pkgs.mkShell {
+          buildInputs = [ pkgs.pre-commit rust.cargo rust.rustc rust.rustfmt rust.clippy ];
+          RUST_SRC_PATH = rust.rustPlatform.rustLibSrc;
         };
       }
     );
