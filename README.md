@@ -111,8 +111,8 @@ nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
 services.portproxy = {
   enable = true;
   proxies = [
-    { listen = ":8080"; connect = "internal.lan:80"; }
-    { listen = ":9090"; connect = "internal.lan:443"; }
+    { listen = "0.0.0.0:8080"; connect = "internal.lan:80"; }
+    { listen = "127.0.0.1:9090"; connect = "internal.lan:443"; }
   ];
   logLevel = "info";
   openFirewall = true;
